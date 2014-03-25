@@ -133,7 +133,10 @@ class VideoBackend(object):
 
     @cached_property
     def info(self):
-        return self.get_info()
+        try:
+            return self.get_info()
+        except:
+            return None
 
     @classmethod
     def is_valid(cls, url):
