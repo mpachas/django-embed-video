@@ -136,7 +136,7 @@ class VideoBackend(object):
         try:
             return self.get_info()
         except:
-            return None
+            return ''
 
     @classmethod
     def is_valid(cls, url):
