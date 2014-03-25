@@ -133,10 +133,7 @@ class VideoBackend(object):
 
     @cached_property
     def info(self):
-        try:
-            return self.get_info()
-        except:
-            return ''
+        return self.get_info()
 
     @classmethod
     def is_valid(cls, url):
@@ -290,5 +287,9 @@ class SoundCloudBackend(VideoBackend):
         return match.group('code')
 
     def get_embed_code(self, width, height):
-        return super(SoundCloudBackend, self). \
-            get_embed_code(width=width, height=self.height)
+        try:
+            return super(SoundCloudBackend, self). \
+                get_embed_code(width=width, height=self.height)
+        except VideoDoesntExistException:
+            return super(SoundCloudBackend, self). \
+                get_embed_code(width='100%', height='166')

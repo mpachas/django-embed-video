@@ -40,13 +40,14 @@ class AdminVideoWidget(forms.TextInput):
             backend = detect_backend(value)
         except UnknownBackendException:
             pass
-        except VideoDoesntExistException:
-            pass #by mpachas
         else:
-            output = self.output_format.format(
-                video=backend.get_embed_code(*size),
-                input=output,
-            )
+            try:
+                output = self.output_format.format(
+                    video=backend.get_embed_code(*size),
+                    input=output,
+                )
+            except VideoDoesntExistException:
+                pass
 
         return mark_safe(output)
 
