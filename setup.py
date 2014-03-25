@@ -14,6 +14,7 @@ CHANGES = read('CHANGES.rst')
 setup(
     name='django-embed-video',
     packages=find_packages(),
+    package_data={'embed_video': ['templates/embed_video/*.html']},
     version=embed_video.get_version(),
     author='Juda Kaleta',
     author_email='juda.kaleta@gmail.com',
