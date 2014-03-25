@@ -200,8 +200,8 @@ class YoutubeBackend(VideoBackend):
         re.I | re.X
     )
 
-    pattern_url = '{protocol}://www.youtube.com/embed/{code}?wmode=opaque'
-    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/hqdefault.jpg'
+    pattern_url = '{protocol}://www.youtube.com/embed/{code}?wmode=opaque&rel=0'
+    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/mqdefault.jpg'
 
     def get_code(self):
         code = super(YoutubeBackend, self).get_code()
@@ -291,5 +291,9 @@ class SoundCloudBackend(VideoBackend):
             return super(SoundCloudBackend, self). \
                 get_embed_code(width=width, height=self.height)
         except VideoDoesntExistException:
-            return super(SoundCloudBackend, self). \
-                get_embed_code(width='100%', height='166')
+            #return super(SoundCloudBackend, self). \
+            #    get_embed_code(width='100%', height='166')
+            return u'<iframe width="100%" height="166px" scrolling="no" \
+                frameborder="no" src="https://w.soundcloud.com/player/?url=\
+                https://api.soundcloud.com/tracks/000000000&amp;color=ff5500&amp;\
+                auto_play=false&amp;hide_related=false&amp;show_artwork=true"></iframe>'
