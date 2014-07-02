@@ -1,11 +1,38 @@
-Release 0.9 (dev)
+Release 0.11 (dev)
+------------------
+
+- add support for YouTube mobile urls
+  (`#27 <https://github.com/yetty/django-embed-video/pull/27>`_)
+
+- fix passing parameters in calling request library
+  (`#28 <https://github.com/yetty/django-embed-video/pull/28>`_)
+
+
+Release 0.10 (May 24, 2014)
 ---------------------------
 
-- Add ``VideoBackend.template_name`` and rendering embed code from file
+- ``video`` tag accepts kwargs
+  (`#20 <https://github.com/yetty/django-embed-video/pull/20>`_)
 
-- Allow relative sizes in template tag (`#19 <https://github.com/yetty/django-embed-video/pull/19>`_)
+- ``video`` tag will not crash anymore with ``None`` passed as url
+  (`#24 <https://github.com/yetty/django-embed-video/issues/24>`_)
 
-- Fix handling invalid urls of SoundCloud. (`#21 <https://github.com/yetty/django-embed-video/issues/21>`_)
+
+Release 0.9 (Apr. 4, 2014)
+--------------------------
+
+- Add ``VideoBackend.template_name`` and rendering embed code from file.
+
+- Allow relative sizes in template tag
+  (`#19 <https://github.com/yetty/django-embed-video/pull/19>`_).
+
+- Fix handling invalid urls of SoundCloud.
+  (`#21 <https://github.com/yetty/django-embed-video/issues/21>`_).
+
+- Catch ``VideoDoesntExistException`` and ``UnknownBackendException`` in
+  template tags and admin widget.
+
+- Add base exception ``EmbedVideoException``.
 
 
 Release 0.8 (Feb. 22, 2014)

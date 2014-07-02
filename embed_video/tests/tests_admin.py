@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-from django.forms import TextInput
-
 from embed_video.admin import AdminVideoWidget, AdminVideoMixin
 from embed_video.backends import VimeoBackend
 from embed_video.fields import EmbedVideoField, EmbedVideoFormField
@@ -35,13 +33,22 @@ class AdminVideoWidgetTestCase(TestCase):
             widget.render('foo', backend.url, size=(100, 100)),
             backend.get_embed_code(100, 100)
             + '<input name="foo" size="0" type="text" value="%s" />'
-                % backend.url
+              % backend.url
         )
 
-    def test_incorrect_value(self):
+    def test_render_unknown_backend(self):
         widget = AdminVideoWidget()
-        self.assertEqual(widget.render('foo', 'abcd'),
-             '<input name="foo" size="40" type="text" value="abcd" />')
+        self.assertEqual(
+            widget.render('foo', 'abcd'),
+            '<input name="foo" size="40" type="text" value="abcd" />'
+        )
+
+    def test_render_video_doesnt_exist(self):
+        widget = AdminVideoWidget()
+        self.assertEqual(
+            widget.render('foo', 'https://soundcloud.com/xyz/foo'),
+            '<input name="foo" size="40" type="text" value="https://soundcloud.com/xyz/foo" />'
+        )
 
 
 class AdminVideoMixinTestCase(TestCase):

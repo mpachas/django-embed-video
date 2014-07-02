@@ -3,13 +3,19 @@ import requests
 import json
 
 try:
+    # Python <= 2.7
     import urlparse
+    from urllib import urlencode
 except ImportError:
     # support for py3
     import urllib.parse as urlparse
+    from urllib.parse import urlencode
 
+from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.functional import cached_property
+from django.utils.safestring import mark_safe
+from django.utils.datastructures import SortedDict
 
 from .utils import import_by_path
 from .settings import EMBED_VIDEO_BACKENDS, EMBED_VIDEO_TIMEOUT
@@ -106,7 +112,7 @@ class VideoBackend(object):
     ``{{ width }}``, ``{{ height }}``
     """
 
-    def __init__(self, url, is_secure=False):
+    def __init__(self, url, is_secure=False, query=None):
         """
         First it tries to load data from cache and if it don't succeed, run
         :py:meth:`init` and then save it to cache.
@@ -114,6 +120,12 @@ class VideoBackend(object):
         self.is_secure = is_secure
         self.backend = self.__class__.__name__
         self._url = url
+        self.update_query(query)
+
+    def update_query(self, query=None):
+        self._query = SortedDict(self.get_default_query())
+        if query is not None:
+            self._query.update(query)
 
     @cached_property
     def code(self):
@@ -155,7 +167,10 @@ class VideoBackend(object):
         """
         Returns URL folded from :py:data:`pattern_url` and parsed code.
         """
-        return self.pattern_url.format(code=self.code, protocol=self.protocol)
+        url = self.pattern_url.format(code=self.code, protocol=self.protocol)
+        if self._query:
+            url += '?' + urlencode(self._query, doseq=True)
+        return mark_safe(url)
 
     def get_thumbnail_url(self):
         """
@@ -178,17 +193,25 @@ class VideoBackend(object):
     def get_info(self):
         raise NotImplementedError
 
+    def get_default_query(self):
+        # Derive backend name from class name
+        backend_name = self.__class__.__name__[:-7].upper()
+        default = getattr(self, 'default_query', {})
+        settings_key = 'EMBED_VIDEO_{0}_QUERY'.format(backend_name)
+        return getattr(settings, settings_key, default).copy()
+
 
 class YoutubeBackend(VideoBackend):
     """
     Backend for YouTube URLs.
     """
     re_detect = re.compile(
-        r'^(http(s)?://)?(www\.)?youtu(\.?)be(\.com)?/.*', re.I
+        r'^(http(s)?://)?(www\.|m\.)?youtu(\.?)be(\.com)?/.*', re.I
     )
 
     re_code = re.compile(
         r'''youtu(\.?)be(\.com)?/  # match youtube's domains
+            (\#/)? # for mobile urls
             (embed/)?  # match the embed url syntax
             (v/)?
             (watch\?v=)?  # match the youtube page url
@@ -200,8 +223,9 @@ class YoutubeBackend(VideoBackend):
         re.I | re.X
     )
 
-    pattern_url = '{protocol}://www.youtube.com/embed/{code}?wmode=opaque&rel=0'
-    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/mqdefault.jpg'
+    pattern_url = '{protocol}://www.youtube.com/embed/{code}'
+    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/hqdefault.jpg'
+    default_query = {'wmode': 'opaque'}
 
     def get_code(self):
         code = super(YoutubeBackend, self).get_code()
@@ -212,7 +236,8 @@ class YoutubeBackend(VideoBackend):
             try:
                 code = urlparse.parse_qs(parse_data.query)['v'][0]
             except KeyError:
-                raise UnknownIdException
+                raise UnknownIdException(
+                    'Cannot get ID from `{0}`'.format(self._url))
 
         return code
 
@@ -265,7 +290,7 @@ class SoundCloudBackend(VideoBackend):
             'format': 'json',
             'url': self._url,
         }
-        r = requests.get(self.base_url, data=params,
+        r = requests.get(self.base_url, params=params,
                          timeout=EMBED_VIDEO_TIMEOUT)
 
         if r.status_code != 200:
