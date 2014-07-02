@@ -271,7 +271,7 @@ class SoundCloudBackend(VideoBackend):
     """
     Backend for SoundCloud URLs.
     """
-    base_url = 'http://soundcloud.com/oembed'
+    base_url = 'https://soundcloud.com/oembed'
 
     re_detect = re.compile(r'^(http(s)?://(www\.)?)?soundcloud\.com/.*', re.I)
     re_code = re.compile(r'src=".*%2F(?P<code>\d+)&show_artwork.*"', re.I)
