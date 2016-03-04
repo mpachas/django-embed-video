@@ -1,20 +1,25 @@
+sudo: false
 language: python
 python:
     - "2.7"
-    - "3.3"
-    - "pypy"
+    - "3.4"
+cache: pip
 env:
     - DJANGO_VERSION=1.5.2
-    - DJANGO_VERSION=1.6
+    - DJANGO_VERSION=1.6.5
+    - DJANGO_VERSION=1.7.0
+    - DJANGO_VERSION=1.8.0
+    - DJANGO_VERSION=1.8.6
+    - DJANGO_VERSION=1.9.1
 install:
-    - pip install -q Django==$DJANGO_VERSION --use-mirrors
-    - pip install coveralls --use-mirrors
-    - pip install mock --use-mirrors
-    - pip install south --use-mirrors
+    - pip install -q Django==$DJANGO_VERSION
+    - pip install coveralls
+    - pip install mock
+    - pip install south
     - pip install nose
     - pip install testfixtures
 script:
     - python setup.py build
-    - python setup.py nosetests --verbosity 2 --with-coverage --cover-tests --cover-erase
+    - PYTHONHASHSEED=0 python setup.py nosetests --verbosity 2 --with-coverage --cover-tests --cover-erase
 after_success:
     - coveralls

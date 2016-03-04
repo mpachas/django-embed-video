@@ -1,5 +1,43 @@
-Release 0.11 (dev)
-------------------
+Release 1.2.0 (dev)
+-------------------
+
+*No changes yet.*
+
+
+Release 1.1.0 (Jan 19, 2016)
+----------------------------
+
+- added support fort Django 1.9
+  (`#52 <https://github.com/yetty/django-embed-video/issues/52>`_)
+  
+- if possible YouTube thumbnails are returned in better resolution
+  (`#43 <https://github.com/yetty/django-embed-video/issues/43>`_)
+
+
+Release 1.0.0 (May 01, 2015)
+----------------------------
+
+**Backward incompatible changes:**
+
+- filter `embed_video_tags.embed` has been removed
+
+- changed behaviour of extra params in video tag
+  (`#34 <https://github.com/yetty/django-embed-video/issues/34>`_, `#36 <https://github.com/yetty/django-embed-video/pull/36>`_)
+
+
+Backward compatible changes:
+
+- added support for Django 1.7 and Django 1.8
+
+- added support for Vimeo channels
+  (`#47 <https://github.com/yetty/django-embed-video/pull/47>`_)
+
+- fix resizing of SoundCloud iframe
+  (`#41 <https://github.com/yetty/django-embed-video/pull/41>`_)
+
+
+Release 0.11 (July 26, 2014)
+----------------------------
 
 - add support for YouTube mobile urls
   (`#27 <https://github.com/yetty/django-embed-video/pull/27>`_)
@@ -21,8 +59,8 @@ Release 0.10 (May 24, 2014)
   (`#24 <https://github.com/yetty/django-embed-video/issues/24>`_)
 
 
-Release 0.9 (Apr. 4, 2014)
---------------------------
+Release 0.9 (Apr. 04, 2014)
+---------------------------
 
 - Add ``VideoBackend.template_name`` and rendering embed code from file.
 

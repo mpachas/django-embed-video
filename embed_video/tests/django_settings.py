@@ -9,6 +9,8 @@ STATIC_ROOT = MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'static')
 STATIC_URL = MEDIA_URL = '/static/'
 
 INSTALLED_APPS = (
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
     'embed_video',
 )
 
@@ -17,7 +19,7 @@ EMBED_VIDEO_BACKENDS = (
     'embed_video.backends.YoutubeBackend',
     'embed_video.backends.VimeoBackend',
     'embed_video.backends.SoundCloudBackend',
-    'embed_video.tests.custom_backend.CustomBackend',
+    'embed_video.tests.backends.tests_custom_backend.CustomBackend',
 )
 
 

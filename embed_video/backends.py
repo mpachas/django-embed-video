@@ -1,24 +1,21 @@
 import re
-import requests
+import sys
 import json
+import requests
 
-try:
-    # Python <= 2.7
-    import urlparse
-    from urllib import urlencode
-except ImportError:
-    # support for py3
+if sys.version_info.major == 3:
     import urllib.parse as urlparse
-    from urllib.parse import urlencode
+else:
+    import urlparse
 
-from django.conf import settings
+from django.http import QueryDict
 from django.template.loader import render_to_string
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
-from django.utils.datastructures import SortedDict
 
 from .utils import import_by_path
-from .settings import EMBED_VIDEO_BACKENDS, EMBED_VIDEO_TIMEOUT
+from .settings import EMBED_VIDEO_BACKENDS, EMBED_VIDEO_TIMEOUT, \
+    EMBED_VIDEO_YOUTUBE_DEFAULT_QUERY
 
 
 class EmbedVideoException(Exception):
@@ -49,6 +46,12 @@ def detect_backend(url):
 
     Goes over backends in ``settings.EMBED_VIDEO_BACKENDS``,
     calls :py:func:`~VideoBackend.is_valid` and returns backend instance.
+
+    :param url: URL which is passed to `is_valid` methods of VideoBackends.
+    :type url: str
+
+    :return: Returns recognized VideoBackend
+    :rtype: VideoBackend
     """
 
     for backend_name in EMBED_VIDEO_BACKENDS:
@@ -62,6 +65,21 @@ def detect_backend(url):
 class VideoBackend(object):
     """
     Base class used as parental class for backends.
+
+
+    Backend variables:
+
+    .. autosummary::
+
+        url
+        code
+        thumbnail
+        query
+        info
+        is_secure
+        protocol
+        template_name
+
 
     .. code-block:: python
 
@@ -90,6 +108,8 @@ class VideoBackend(object):
     Pattern in which the code is inserted.
 
     Example: ``http://myvideo.com?code=%s``
+
+    :type: str
     """
 
     pattern_thumbnail_url = None
@@ -97,11 +117,15 @@ class VideoBackend(object):
     Pattern in which the code is inserted to get thumbnail url.
 
     Example: ``http://static.myvideo.com/thumbs/%s``
+
+    :type: str
     """
 
     allow_https = True
     """
     Sets if HTTPS version allowed for specific backend.
+
+    :type: bool
     """
 
     template_name = 'embed_video/embed_code.html'
@@ -110,54 +134,101 @@ class VideoBackend(object):
 
     Passed template variables: ``{{ backend }}`` (instance of VideoBackend),
     ``{{ width }}``, ``{{ height }}``
+
+    :type: str
     """
 
-    def __init__(self, url, is_secure=False, query=None):
+    default_query = ''
+    """
+    Default query string or `QueryDict` appended to url
+
+    :type: str
+    """
+
+    is_secure = False
+    """
+    Decides if secured protocol (HTTPS) is used.
+
+    :type: bool
+    """
+
+    def __init__(self, url):
         """
         First it tries to load data from cache and if it don't succeed, run
         :py:meth:`init` and then save it to cache.
+
+        :type url: str
         """
-        self.is_secure = is_secure
         self.backend = self.__class__.__name__
         self._url = url
-        self.update_query(query)
+        self.query = QueryDict(self.default_query, mutable=True)
 
-    def update_query(self, query=None):
-        self._query = SortedDict(self.get_default_query())
-        if query is not None:
-            self._query.update(query)
-
-    @cached_property
+    @property
     def code(self):
+        """
+        Code of video.
+        """
         return self.get_code()
 
-    @cached_property
+    @property
     def url(self):
+        """
+        URL of video.
+        """
         return self.get_url()
 
-    @cached_property
+    @property
     def protocol(self):
+        """
+        Protocol used to generate URL.
+        """
         return 'https' if self.allow_https and self.is_secure else 'http'
 
-    @cached_property
+    @property
     def thumbnail(self):
+        """
+        URL of video thumbnail.
+        """
         return self.get_thumbnail_url()
 
-    @cached_property
+    @property
     def info(self):
+        """
+        Additional information about video. Not implemented in all backends.
+        """
         return self.get_info()
+
+    @property
+    def query(self):
+        """
+        String transformed to QueryDict appended to url.
+        """
+        return self._query
+
+    @query.setter
+    def query(self, value):
+        """
+        :type value: QueryDict | str
+        """
+        self._query = value \
+            if isinstance(value, QueryDict) \
+            else QueryDict(value, mutable=True)
 
     @classmethod
     def is_valid(cls, url):
         """
         Class method to control if passed url is valid for current backend. By
         default it is done by :py:data:`re_detect` regex.
+
+        :type url: str
         """
         return True if cls.re_detect.match(url) else False
 
     def get_code(self):
         """
         Returns video code matched from given url by :py:data:`re_code`.
+
+        :rtype: str
         """
         match = self.re_code.search(self._url)
         if match:
@@ -168,14 +239,15 @@ class VideoBackend(object):
         Returns URL folded from :py:data:`pattern_url` and parsed code.
         """
         url = self.pattern_url.format(code=self.code, protocol=self.protocol)
-        if self._query:
-            url += '?' + urlencode(self._query, doseq=True)
+        url += '?' + self.query.urlencode() if self.query else ''
         return mark_safe(url)
 
     def get_thumbnail_url(self):
         """
         Returns thumbnail URL folded from :py:data:`pattern_thumbnail_url` and
         parsed code.
+
+        :rtype: str
         """
         return self.pattern_thumbnail_url.format(code=self.code,
                                                  protocol=self.protocol)
@@ -183,6 +255,10 @@ class VideoBackend(object):
     def get_embed_code(self, width, height):
         """
         Returns embed code rendered from template :py:data:`template_name`.
+
+        :type width: int | str
+        :type height: int | str
+        :rtype: str
         """
         return render_to_string(self.template_name, {
             'backend': self,
@@ -191,14 +267,17 @@ class VideoBackend(object):
         })
 
     def get_info(self):
+        """
+        :rtype: dict
+        """
         raise NotImplementedError
 
-    def get_default_query(self):
-        # Derive backend name from class name
-        backend_name = self.__class__.__name__[:-7].upper()
-        default = getattr(self, 'default_query', {})
-        settings_key = 'EMBED_VIDEO_{0}_QUERY'.format(backend_name)
-        return getattr(settings, settings_key, default).copy()
+    def set_options(self, options):
+        """
+        :type options: dict
+        """
+        for key in options:
+            setattr(self, key, options[key])
 
 
 class YoutubeBackend(VideoBackend):
@@ -224,8 +303,14 @@ class YoutubeBackend(VideoBackend):
     )
 
     pattern_url = '{protocol}://www.youtube.com/embed/{code}'
-    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/hqdefault.jpg'
-    default_query = {'wmode': 'opaque'}
+    pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/{resolution}'
+    default_query = EMBED_VIDEO_YOUTUBE_DEFAULT_QUERY
+    resolutions = [
+        'maxresdefault.jpg',
+        'sddefault.jpg',
+        'hqdefault.jpg',
+        'mqdefault.jpg',
+    ]
 
     def get_code(self):
         code = super(YoutubeBackend, self).get_code()
@@ -243,6 +328,20 @@ class YoutubeBackend(VideoBackend):
 
         return code
 
+    def get_thumbnail_url(self):
+        """
+        Returns thumbnail URL folded from :py:data:`pattern_thumbnail_url` and
+        parsed code.
+
+        :rtype: str
+        """
+        for resolution in self.resolutions:
+            temp_thumbnail_url = self.pattern_thumbnail_url.format(
+                code=self.code, protocol=self.protocol, resolution=resolution)
+            if int(requests.head(temp_thumbnail_url).status_code) < 400:
+                return temp_thumbnail_url
+        return None
+
 
 class VimeoBackend(VideoBackend):
     """
@@ -251,7 +350,7 @@ class VimeoBackend(VideoBackend):
     re_detect = re.compile(
         r'^((http(s)?:)?//)?(www\.)?(player\.)?vimeo\.com/.*', re.I
     )
-    re_code = re.compile(r'''vimeo\.com/(video/)?(?P<code>[0-9]+)''', re.I)
+    re_code = re.compile(r'''vimeo\.com/(video/)?(channels/(.*/)?)?(?P<code>[0-9]+)''', re.I)
     pattern_url = '{protocol}://player.vimeo.com/video/{code}'
     pattern_info = '{protocol}://vimeo.com/api/v2/video/{code}.json'
 
@@ -281,10 +380,16 @@ class SoundCloudBackend(VideoBackend):
 
     @cached_property
     def width(self):
+        """
+        :rtype: str
+        """
         return self.info.get('width')
 
     @cached_property
     def height(self):
+        """
+        :rtype: str
+        """
         return self.info.get('height')
 
     def get_info(self):
@@ -314,13 +419,6 @@ class SoundCloudBackend(VideoBackend):
         return match.group('code')
 
     def get_embed_code(self, width, height):
-        try:
-            return super(SoundCloudBackend, self). \
-                get_embed_code(width=width, height=self.height)
-        except VideoDoesntExistException:
-            #return super(SoundCloudBackend, self). \
-            #    get_embed_code(width='100%', height='166')
-            return u'<iframe width="100%" height="166px" scrolling="no" \
-                frameborder="no" src="https://w.soundcloud.com/player/?url=\
-                https://api.soundcloud.com/tracks/000000000&amp;color=ff5500&amp;\
-                auto_play=false&amp;hide_related=false&amp;show_artwork=true"></iframe>'
+        return super(SoundCloudBackend, self). \
+            get_embed_code(width=width, height=height)
+
