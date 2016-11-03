@@ -306,7 +306,7 @@ class YoutubeBackend(VideoBackend):
     pattern_thumbnail_url = '{protocol}://img.youtube.com/vi/{code}/{resolution}'
     default_query = EMBED_VIDEO_YOUTUBE_DEFAULT_QUERY
     resolutions = [
-        'maxresdefault.jpg',
+        #'maxresdefault.jpg',
         'sddefault.jpg',
         'hqdefault.jpg',
         'mqdefault.jpg',
