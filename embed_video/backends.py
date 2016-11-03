@@ -307,9 +307,9 @@ class YoutubeBackend(VideoBackend):
     default_query = EMBED_VIDEO_YOUTUBE_DEFAULT_QUERY
     resolutions = [
         #'maxresdefault.jpg',
+        'mqdefault.jpg',
         'sddefault.jpg',
         'hqdefault.jpg',
-        'mqdefault.jpg',
     ]
 
     def get_code(self):
