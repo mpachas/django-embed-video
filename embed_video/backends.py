@@ -137,6 +137,8 @@ class VideoBackend(object):
 
     :type: str
     """
+    template_name_amp_youtube = 'embed_video/embed_code_amp_youtube.html'
+    template_name_amp_vimeo = 'embed_video/embed_code_amp_vimeo.html'
 
     default_query = ''
     """
@@ -145,7 +147,7 @@ class VideoBackend(object):
     :type: str
     """
 
-    is_secure = False
+    is_secure = True
     """
     Decides if secured protocol (HTTPS) is used.
 
@@ -169,6 +171,13 @@ class VideoBackend(object):
         Code of video.
         """
         return self.get_code()
+
+    @property
+    def language(self):
+        """
+        Video Subtitles Language.
+        """
+        return self.get_language()
 
     @property
     def url(self):
@@ -234,6 +243,18 @@ class VideoBackend(object):
         if match:
             return match.group('code')
 
+    def get_language(self):
+        """
+        Returns video language matched from given url by :py:data:`re_code`.
+
+        :rtype: str
+        """
+	language = ''
+        if 'hl' in self.query:
+            language = self.query['hl']            
+
+        return language
+
     def get_url(self):
         """
         Returns URL folded from :py:data:`pattern_url` and parsed code.
@@ -260,7 +281,18 @@ class VideoBackend(object):
         :type height: int | str
         :rtype: str
         """
-        return render_to_string(self.template_name, {
+
+        template = self.template_name
+        if hasattr(self, 'amp'):
+            if self.amp is True:
+                if self.backend == "YoutubeBackend":
+                    template = self.template_name_amp_youtube
+                elif self.backend == "VimeoBackend":
+                    template = self.template_name_amp_vimeo
+                elif self.backend == "VideoBackend":
+                    template = self.template_name_amp_video
+
+        return render_to_string(template, {
             'backend': self,
             'width': width,
             'height': height,
@@ -327,6 +359,13 @@ class YoutubeBackend(VideoBackend):
                 raise UnknownIdException('Cannot get ID from `{0}`'.format(self._url))
 
         return code
+
+    def get_language(self):
+	language = ''
+        if 'hl' in self.query:
+            language = self.query['hl']            
+
+        return language
 
     def get_thumbnail_url(self):
         """
