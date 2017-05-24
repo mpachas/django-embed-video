@@ -282,7 +282,6 @@ class VideoBackend(object):
         :rtype: str
         """
 
-        print "self.backend %s" % self.backend # REMOVE!!!
         template = self.template_name
         if hasattr(self, 'amp'):
             if self.amp is True:
