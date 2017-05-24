@@ -137,6 +137,7 @@ class VideoBackend(object):
 
     :type: str
     """
+
     template_name_amp_vimeo = 'embed_video/amp/embed_code_vimeo.html'
     template_name_amp_youtube = 'embed_video/amp/embed_code_youtube.html'
 
@@ -364,7 +365,7 @@ class YoutubeBackend(VideoBackend):
 	language = ''
         if 'hl' in self.query:
             language = self.query['hl']
-
+        
         return language
 
     def get_thumbnail_url(self):
