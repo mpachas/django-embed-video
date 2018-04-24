@@ -2,6 +2,7 @@ import re
 import sys
 import json
 import requests
+import string
 
 if sys.version_info.major == 3:
     import urllib.parse as urlparse
@@ -137,7 +138,6 @@ class VideoBackend(object):
 
     :type: str
     """
-
     template_name_amp_vimeo = 'embed_video/amp/embed_code_vimeo.html'
     template_name_amp_youtube = 'embed_video/amp/embed_code_youtube.html'
 
@@ -365,7 +365,7 @@ class YoutubeBackend(VideoBackend):
 	language = ''
         if 'hl' in self.query:
             language = self.query['hl']
-        
+
         return language
 
     def get_thumbnail_url(self):
@@ -448,7 +448,9 @@ class SoundCloudBackend(VideoBackend):
         return json.loads(r.text)
 
     def get_thumbnail_url(self):
-        return self.info.get('thumbnail_url')
+        thumbnail_url = self.info.get('thumbnail_url')
+        thumbnail_url = thumbnail_url.replace('http:', 'https:')
+        return thumbnail_url
 
     def get_url(self):
         match = self.re_url.search(self.info.get('html'))
