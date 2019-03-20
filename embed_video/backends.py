@@ -284,6 +284,8 @@ class VideoBackend(object):
         """
 
         template = self.template_name
+        if hasattr(self, 'romereports'):
+            template = 'embed_video/embed_code_romereports.html'
         if hasattr(self, 'amp'):
             if self.amp is True:
                 if self.backend == "YoutubeBackend":
